@@ -1,0 +1,7 @@
+1.	**Recoding_Merging**: This file is responsible for loading all the CSV files found in the "BERKA" folder. It handles the recoding of each variable and performs the merging of data, along with some initial cleaning. The output file is `res5.2.csv`.
+2.	**VariablesAnalysis**: This file loads the `res5.2.csv` file and, in addition to running analyses, adjusts the units of measurement where necessary. The output file is `dat2.2.csv`.
+3.	**Multicollinearity_TrainTestDatasets**: This file loads the `dat2.2.csv` file, resolves multicollinearity issues, and splits the data into training and test sets.
+4. & 5.	**LogitModel** and **CloglogModel**: These files require the MulticollinearitàTrainTest file to be executed first and contain the studies related to the models.
+
+The creation of these CSV files has made the process steps more “independent”, except for the files related to the models, which require the Multicollinearity_TrainTestDatasets file to be run first.
+When executing these scripts, it's recommended to run the entire file in one go to avoid issues related to the execution order of the code chunks.
