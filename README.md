@@ -7,7 +7,7 @@ The thesis explores the application of binomial generalized linear models (GLM) 
 ---
 
 ## ⚠️ Disclaimer
-The documents and all code comments are written in **Italian** because I submitted the thesis in Italian. If you have any questions or need clarification in English, feel free to reach out to me.
+The documents and all code comments are written in **Italian**. If you have any questions or need clarification in English, feel free to reach out to me.
 
 ---
 
