@@ -20,19 +20,19 @@ The documents and all code comments are written in **Italian** because I submitt
 ### Abstract
 A large part of the work carried out by financial intermediaries lies in taking on risks, with the primary one being credit risk, which is defined as the risk of insolvency of a borrower requesting a loan. Given the centrality of lending activity, not only within individual banks but also within the entire banking ecosystem, the Basel Committee on Banking Supervision has established that banks are required to measure the one-year probability of insolvency for each client in order to calculate the risk-weighted exposure of loans. To this end, they can rely on internal rating systems by calculating their own estimates for the probability of default (PD).
 
-This is the starting point for this work, which aims to investigate the use of binomial GLM models for predicting the probability of insolvency. Logistic regression, based on a symmetric link function, is one of the most widely used models in academic literature for calculating the probability of default. However, it shows significant disadvantages in studies involving highly unbalanced data, a characteristic typical of data in this context. Therefore, its performance is compared with that of the complementary log-log regression, which uses an asymmetric link function derived from the cumulative distribution function of the random variable called Generalized Extreme Value (GEV).
+This is the starting point for this work, which aims to investigate the use of binomial GLM models for predicting the probability of insolvency. Logistic regression, based on a symmetric link function, is one of the most widely used models in academic literature for calculating the probability of default. However, it shows significant disadvantages in studies involving highly imbalanced data, a characteristic typical of data in this context. Therefore, its performance is compared with that of the complementary log-log regression, which uses an asymmetric link function derived from the cumulative distribution function of the random variable called Generalized Extreme Value (GEV).
 
 ---
 
 ## 🏗️ Repository Structure
-- `Index_Intro`: Contains the Table of Contents and the Introduction of my thesis.
-- `Chapter3`: Is the chapter related to the application of the models on real-world data.
+- `Index_Intro/`: Contains the Table of Contents and the Introduction of my thesis.
+- `Chapter3/`: The chapter related to the application of the models on real-world data.
 - `BERKA/`: Includes datasets used for model training and evaluation. 
 - `scripts/`: Scripts for data preprocessing, model building, validation, and comparison. Refer to `scripts/README_scripts` for more details.
 
 ---
 
-## 🚀 A (very) brief overview of my thesis
+## 🚀 A (Very) Brief Overview of My Thesis
 
 ### Chapter 1: Credit Risk and Credit Scoring
 - The importance of credit risk management in the banking ecosystem.
@@ -44,7 +44,7 @@ This is the starting point for this work, which aims to investigate the use of b
 - The rationale for using specific link functions.
 - Generalized Extreme Value distribution.
 - Logit model and Complementary log-log model.
-- Parameters estimation
+- Parameter estimation.
 - Model validation and selection.
 - From regression to classification.
 
@@ -63,6 +63,3 @@ This is the starting point for this work, which aims to investigate the use of b
 
 ## 🛠️ Technologies Used
 - **R**: For statistical modeling and data analysis.
-
-
-
