@@ -1,0 +1,168 @@
+---
+title: "Multicollinearità"
+output: html_document
+date: "2023-07-07"
+---
+
+
+### !!! LEGGERE IL FILE dat2.2.csv !!!
+
+```{r}
+#dat <- read.csv("C:\\Users\\salva\\OneDrive - Università di Salerno\\tesi\\DATI VERSIONE 2\\dat2.2.csv")
+```
+
+```{r}
+dat <- read.csv("/Users/mariapiatedesco/Library/CloudStorage/OneDrive-UniversitàdiSalerno/tesi/DATI VERSIONE 2/dat2.2.csv")
+```
+
+### !!! LEGGERE IL FILE dat2.2.csv !!!
+
+
+
+
+```{r}
+head(dat)
+```
+
+```{r}
+dat <- subset(dat, select=-c(X))
+dat$duration <- as.factor(dat$duration)
+dat$status <- as.factor(dat$status)
+dat$frequency <- as.factor(dat$frequency)
+dat$region <- as.factor(dat$region)
+dat$gender <- as.factor(dat$gender)
+
+head(dat)
+```
+
+```{r}
+X_cont <- Filter(is.numeric, dat)
+fact <- Filter(is.factor, dat)
+
+head(X_cont)
+head(fact)
+```
+
+
+# Numeriche
+
+```{r}
+library(corrplot)
+corrplot(cor(X_cont), method="ellipse", type="upper", diag=FALSE)
+```
+
+```{r}
+matrice_cor <- cor(X_cont)
+cor_alta <- which(abs(matrice_cor) >= 0.8 & matrice_cor != 1, arr.ind = TRUE)
+```
+
+```{r}
+for (i in 1:nrow(cor_alta)) {
+  var1 <- rownames(matrice_cor)[cor_alta[i, 1]]
+  var2 <- colnames(matrice_cor)[cor_alta[i, 2]]
+  print(paste("Coppia di variabili:", var1, "-", var2)) }
+```
+
+```{r}
+X_cont <- subset(X_cont, select = -c(inhab, unempl95, crimes95, crimes96))
+```
+
+```{r}
+corrplot(cor(X_cont), method="ellipse", type="upper", diag=FALSE)
+```
+
+```{r}
+matrice_cor <- cor(X_cont)
+which(abs(matrice_cor) >= 0.8 & matrice_cor != 1, arr.ind = TRUE)
+```
+
+
+# ricostruisco dataset
+
+```{r}
+dat1 <- data.frame(fact, X_cont)
+head(dat1)
+```
+
+voglio mettere status alla fine
+
+```{r}
+status <- dat1$status
+dat1 <- subset(dat1, select=-c(status))
+dat1$status <- status
+head(dat1)
+```
+
+
+
+# DIVIDO IN TRAIN E TEST SET DATASET INTERO 
+
+```{r}
+set.seed(123)
+library(caret)
+idx_train <- createDataPartition(y = dat1$status, p = 0.8)
+```
+
+```{r}
+dat_train <- dat1[idx_train[[1]], ]
+Y_train <- dat_train[, ncol(dat1)]
+X_train <- dat_train[, 1:ncol(dat1)-1]
+
+dat_test <- dat1[-idx_train[[1]], ]
+Y_test <- dat_test[, ncol(dat1)]
+X_test <- dat_test[, 1:ncol(dat1)-1]
+```
+
+```{r}
+table(Y_test)/nrow(dat_test)*100
+table(Y_train)/nrow(dat_train)*100
+```
+
+
+
+# DIVIDO IN TRAIN E TEST SET DATASET SOLO CON VARIABILI I CUI TEST HANNO PORTATO AL RIFIUTO DI H0 --- SIGNIFICATIVE DEL FILE PRECEDENTE
+
+```{r}
+X_super <- subset(X_cont, select=c(amount, payments, acc_m, avg_balance, avg_amtC, avg_amtW, remittance, cash_c, cash_w))
+fact_super <- subset(fact, select=c(status))
+```
+
+```{r}
+dat_super <- data.frame(X_super,fact_super)
+head(dat_super)
+```
+
+```{r}
+dat_train2 <- dat_super[idx_train[[1]], ]
+Y_train2 <- dat_train2[, ncol(dat_super)]
+X_train2 <- dat_train2[, 1:ncol(dat_super)-1]
+
+dat_test2 <- dat_super[-idx_train[[1]], ]
+Y_test2 <- dat_test2[, ncol(dat_super)]
+X_test2 <- dat_test2[, 1:ncol(dat_super)-1]
+
+head(dat_train)
+head(dat_train2)
+
+head(dat_test)
+head(dat_test2)
+```
+
+```{r}
+table(Y_test)/nrow(dat_test)*100
+table(Y_train)/nrow(dat_train)*100
+table(dat_super$status)/nrow(dat_super)*100
+
+table(Y_test2)/nrow(dat_test2)*100
+table(Y_train2)/nrow(dat_train2)*100
+table(dat_super$status)/nrow(dat_super)*100
+```
+
+
+```{r}
+#write.csv(dat1, "dataset_finale.csv")
+```
+
+
+
+

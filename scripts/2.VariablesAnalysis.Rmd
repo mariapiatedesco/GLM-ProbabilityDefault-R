@@ -1,0 +1,789 @@
+---
+title: "Dati"
+output:
+  pdf_document: Status
+  html_document: Status
+date: "2023-07-04"
+---
+
+
+
+### !!! LEGGERE IL FILE  res5.2.csv !!!
+
+```{r}
+#res5 <- read.csv("C:\\Users\\salva\\OneDrive - Università di Salerno\\tesi\\DATI VERSIONE 2\\res5.2.csv")
+```
+
+```{r}
+res5 <- read.csv("/Users/mariapiatedesco/Library/CloudStorage/OneDrive-UniversitàdiSalerno/tesi/DATI VERSIONE 2/res5.2.csv")
+```
+
+### !!! LEGGERE IL FILE  res5.2.csv !!!
+
+
+
+
+```{r}
+head(res5)
+```
+
+```{r}
+res5 <- subset(res5, select=-c(X))
+res5$duration <- as.factor(res5$duration)
+res5$status <- as.factor(res5$status)
+res5$frequency <- as.factor(res5$frequency)
+res5$region <- as.factor(res5$region)
+res5$gender <- as.factor(res5$gender) 
+```
+
+```{r}
+dat1 <- res5 # risultato del merge originale 
+dat2 <- res5 # in cui metteremo cambiamenti 
+```
+
+
+# ANALISI VARIABILE PER VARIABILE 
+
+```{r}
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+
+library(confintr)
+library(entropy)
+library(arules)
+library(pscl)
+```
+
+
+vediamo bene cosa abbiamo ottenuto 
+
+```{r}
+head(dat1)
+```
+
+```{r}
+summary(dat1)
+```
+
+
+
+# ACCOUNT 
+
+## frequency - NON SIGNIFICATIVA 
+
+```{r}
+table(dat1$frequency)/nrow(dat1)*100
+summary(dat1$frequency[dat1$status==0])/600*100
+summary(dat1$frequency[dat1$status==1])/74*100
+```
+
+```{r}
+table(dat1$frequency,dat1$status)
+chisq.test(table(dat1$frequency,dat1$status))
+cramersv(table(dat1$frequency,dat1$status))
+```
+
+```{r}
+f <- glm(dat1$status ~ dat1$frequency, family="binomial")
+summary(f)
+1 - (deviance(f)/f$null.deviance)
+```
+
+
+## acc_m - SIGNIFICATIVA
+
+```{r}
+summary(dat1$acc_m)
+summary(dat1$acc_m[dat1$status==0])
+summary(dat1$acc_m[dat1$status==1])
+```
+
+```{r}
+t.test(acc_m ~ status, data = dat1,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(acc_m ~ status, data = dat1)
+```
+
+```{r}
+ggplot(dat1, aes(x=acc_m)) +
+  geom_boxplot(aes(colour=status, fill=status), alpha=0.3) +
+  xlab("Account months") +
+  labs(colour="Status", fill="Status") +
+  theme_light()
+```
+
+```{r}
+am <- glm(dat1$status ~ dat1$acc_m, family="binomial")
+summary(am)
+1 - (deviance(am)/am$null.deviance)
+```
+
+
+# CLIENT
+
+## gender - NON SIGNIFICATIVA
+
+```{r}
+table(dat1$gender)/nrow(dat1)*100
+summary(dat1$gender[dat1$status==0])/600*100
+summary(dat1$gender[dat1$status==1])/74*100
+```
+
+```{r}
+table(dat1$gender,dat1$status)
+chisq.test(table(dat1$gender,dat1$status))
+cramersv(table(dat1$gender,dat1$status))
+```
+
+```{r}
+g <- glm(dat1$status ~ dat1$gender, family="binomial")
+summary(g)
+1 - (deviance(g)/g$null.deviance)
+```
+
+
+## age - NON SIGNIFICATIVA 
+
+```{r}
+summary(dat1$age)
+summary(dat1$age[dat1$status==0])
+summary(dat1$age[dat1$status==1])
+```
+
+```{r}
+t.test(age ~ status, data = dat1,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(age ~ status, data = dat1)
+```
+
+```{r}
+a <- glm(dat1$status ~ dat1$age, family="binomial")
+summary(a)
+1 - (deviance(a)/a$null.deviance)
+```
+
+
+# DISTRICT
+
+## region - NON SIGNIFICATIVA
+
+```{r}
+table(dat1$region)/nrow(dat1)*100
+summary(dat1$region[dat1$status==0])/600*100
+summary(dat1$region[dat1$status==1])/74*100
+```
+
+```{r}
+chisq.test(table(dat1$region,dat1$status))
+cramersv(table(dat1$region,dat1$status))
+```
+
+```{r}
+r <- glm(dat1$status ~ dat1$region, family="binomial")
+summary(r)
+1 - (deviance(r)/r$null.deviance)
+```
+
+
+## inhab - NON SIGNIFICATIVA !!! DIVISO 10000
+
+```{r}
+summary(dat1$inhab)
+summary(dat1$inhab[dat1$status==0])
+summary(dat1$inhab[dat1$status==1])
+```
+
+```{r}
+dat2$inhab <- dat1$inhab/10000
+summary(dat2$inhab)
+```
+
+```{r}
+t.test(inhab ~ status, data = dat2,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(inhab ~ status, data = dat2)
+```
+
+```{r}
+i <- glm(dat1$status ~ dat2$inhab, family="binomial")
+summary(i)
+1 - (deviance(i)/i$null.deviance)
+```
+
+
+## mun - NON SIGNIFICATIVA
+
+L'HO ANCHE FATTO MA FORSE INUTILE METTERLO A PRESCINDERE
+
+```{r}
+summary(dat1$mun499)
+summary(dat1$mun499[dat1$status==0])
+summary(dat1$mun499[dat1$status==1])
+```
+
+```{r}
+t.test(mun499 ~ status, data = dat1,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(mun499 ~ status, data = dat1)
+```
+
+```{r}
+m1 <- glm(dat1$status ~ dat1$mun499, family="binomial")
+summary(m1)
+1 - (deviance(m1)/m1$null.deviance)
+```
+
+
+```{r}
+summary(dat1$mun1999)
+summary(dat1$mun1999[dat1$status==0])
+summary(dat1$mun1999[dat1$status==1])
+```
+
+```{r}
+t.test(mun1999 ~ status, data = dat1,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(mun1999 ~ status, data = dat1)
+```
+
+```{r}
+m2 <- glm(dat1$status ~ dat1$mun1999, family="binomial")
+summary(m2)
+1 - (deviance(m2)/m2$null.deviance)
+```
+
+
+```{r}
+summary(dat1$mun9999)
+summary(dat1$mun9999[dat1$status==0])
+summary(dat1$mun9999[dat1$status==1])
+```
+
+```{r}
+t.test(mun9999 ~ status, data = dat1,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(mun9999 ~ status, data = dat1)
+```
+
+```{r}
+m3 <- glm(dat1$status ~ dat1$mun9999, family="binomial")
+summary(m3)
+1 - (deviance(m3)/m3$null.deviance)
+```
+
+
+```{r}
+summary(dat1$mun10000)
+summary(dat1$mun10000[dat1$status==0])
+summary(dat1$mun10000[dat1$status==1])
+```
+
+```{r}
+t.test(mun10000 ~ status, data = dat1,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(mun10000 ~ status, data = dat1)
+```
+
+```{r}
+m4 <- glm(dat1$status ~ dat1$mun10000, family="binomial")
+summary(m4)
+1 - (deviance(m4)/m4$null.deviance)
+```
+
+
+## cities - NON SIGNIFICATIVA
+
+```{r}
+summary(dat1$cities)
+summary(dat1$cities[dat1$status==0])
+summary(dat1$cities[dat1$status==1])
+```
+
+```{r}
+t.test(cities ~ status, data = dat1,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(cities ~ status, data = dat1)
+```
+
+```{r}
+c <- glm(dat1$status ~ dat1$cities, family="binomial")
+summary(c)
+1 - (deviance(c)/c$null.deviance)
+```
+
+
+## ratio_urban - NON SIGNIFICATIVA 
+
+```{r}
+summary(dat1$ratio_urban)
+summary(dat1$ratio_urban[dat1$status==0])
+summary(dat1$ratio_urban[dat1$status==1])
+```
+
+```{r}
+t.test(ratio_urban ~ status, data = dat1,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(ratio_urban ~ status, data = dat1)
+```
+
+```{r}
+ru <- glm(dat1$status ~ dat1$ratio_urban, family="binomial")
+summary(ru)
+1 - (deviance(ru)/ru$null.deviance)
+```
+
+
+## avg_salary - NON SIGNIFICATIVA !!! DIVISO 100
+
+```{r}
+summary(dat1$avg_salary)
+summary(dat1$avg_salary[dat1$status==0])
+summary(dat1$avg_salary[dat1$status==1])
+```
+
+```{r}
+dat2$avg_salary <- dat1$avg_salary/100
+summary(dat2$avg_salary)
+```
+
+```{r}
+t.test(avg_salary ~ status, data = dat2,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(avg_salary ~ status, data = dat2)
+```
+
+```{r}
+as <- glm(dat1$status ~ dat1$avg_salary, family="binomial")
+summary(as)
+1 - (deviance(as)/as$null.deviance)
+```
+
+
+## unempl95 - NON SIGNIFICATIVA
+
+```{r}
+summary(dat1$unempl95)
+summary(dat1$unempl95[dat1$status==0])
+summary(dat1$unempl95[dat1$status==1])
+```
+
+```{r}
+t.test(unempl95 ~ status, data = dat1,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(unempl95 ~ status, data = dat1)
+```
+
+```{r}
+u95 <- glm(dat1$status ~ dat1$unempl95, family="binomial")
+summary(u95)
+1 - (deviance(u95)/u95$null.deviance)
+```
+
+
+## unempl96 - NON SIGNIFICATIVA
+
+```{r}
+summary(dat1$unempl96)
+summary(dat1$unempl96[dat1$status==0])
+summary(dat1$unempl96[dat1$status==1])
+```
+
+```{r}
+t.test(unempl96 ~ status, data = dat1,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(unempl96 ~ status, data = dat1)
+```
+
+```{r}
+u96 <- glm(dat1$status ~ dat1$unempl96, family="binomial")
+summary(u96)
+1 - (deviance(u96)/u96$null.deviance)
+```
+
+
+## ratio_entr - NON SIGNIFICATIVA
+
+```{r}
+summary(dat1$ratio_entr)
+summary(dat1$ratio_entr[dat1$status==0])
+summary(dat1$ratio_entr[dat1$status==1])
+```
+
+```{r}
+t.test(ratio_entr ~ status, data = dat1,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(ratio_entr ~ status, data = dat1)
+```
+
+```{r}
+re <- glm(dat1$status ~ dat1$ratio_entr, family="binomial")
+summary(re)
+1 - (deviance(re)/re$null.deviance)
+```
+
+
+## crimes95 - NON SIGNIFICATIVA !!! DIVISO 100
+
+```{r}
+summary(dat1$crimes95)
+summary(dat1$crimes95[dat1$status==0])
+summary(dat1$crimes95[dat1$status==1])
+```
+
+```{r}
+dat2$crimes95 <- dat1$crimes95/100
+summary(dat2$crimes95)
+```
+
+```{r}
+t.test(crimes95 ~ status, data = dat2,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(crimes95 ~ status, data = dat2)
+```
+
+```{r}
+c95 <- glm(dat1$status ~ dat2$crimes95, family="binomial")
+summary(c95)
+1 - (deviance(c95)/c95$null.deviance)
+```
+
+
+## crimes96 - NON SIGNIFICATIVA !!! DIVISO 100
+
+```{r}
+summary(dat1$crimes96)
+summary(dat1$crimes96[dat1$status==0])
+summary(dat1$crimes96[dat1$status==1])
+```
+
+```{r}
+dat2$crimes96 <- dat1$crimes96/100
+summary(dat2$crimes96)
+```
+
+```{r}
+t.test(crimes96 ~ status, data = dat2,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(crimes96 ~ status, data = dat2)
+```
+
+```{r}
+c96 <- glm(dat1$status ~ dat2$crimes96, family="binomial")
+summary(c96)
+1 - (deviance(c96)/c96$null.deviance)
+```
+
+
+
+# LOAN
+
+## amount - SIGNIFICATIVA !!! DIVISO 10000
+
+```{r}
+summary(dat1$amount)
+summary(dat1$amount[dat1$status==0])
+summary(dat1$amount[dat1$status==1])
+```
+
+```{r}
+dat2$amount <- dat1$amount/10000
+summary(dat2$amount)
+```
+
+```{r}
+t.test(amount ~ status, data = dat2,
+       alternative = 'two.sided',     
+       conf.level = .95) 
+var.test(amount ~ status, data = dat2)
+```
+
+```{r}
+ggplot(dat2, aes(x=amount)) +
+  geom_boxplot(aes(colour=status, fill=status), alpha=0.3) +
+  xlab("Amount") +
+  labs(colour="Status", fill="Status") +
+  theme_light()
+```
+
+```{r}
+al <- glm(dat1$status ~ dat2$amount, family="binomial")
+summary(al)
+1 - (deviance(al)/al$null.deviance)
+```
+
+
+## duration - NON SIGNIFICATIVA
+
+```{r}
+table(dat1$duration)/nrow(dat1)*100
+summary(dat1$duration[dat1$status==0])/600*100
+summary(dat1$duration[dat1$status==1])/74*100
+```
+
+```{r}
+table(dat1$duration, dat1$status)
+chisq.test(table(dat1$duration, dat1$status))
+cramersv(table(dat1$duration, dat1$status))
+```
+
+```{r}
+d <- glm(dat1$status ~ dat1$duration, family="binomial")
+summary(d)
+1 - (deviance(d)/d$null.deviance)
+```
+
+
+## payments - SIGNIFICATIVA !!! DIVISO 100
+
+```{r}
+summary(dat1$payments)
+summary(dat1$payments[dat1$status==0])
+summary(dat1$payments[dat1$status==1])
+```
+
+```{r}
+dat2$payments <- dat1$payments/100
+summary(dat2$payments)
+```
+
+```{r}
+t.test(payments ~ status, data = dat2,
+       alternative = 'two.sided',     
+       conf.level = .95) 
+var.test(payments ~ status, data = dat2)
+```
+
+```{r}
+ggplot(dat2, aes(x=payments)) +
+  geom_boxplot(aes(colour=status, fill=status), alpha=0.3) +
+  xlab("Payments") +
+  labs(colour="Status", fill="Status") +
+  theme_light()
+```
+
+```{r}
+p <- glm(dat1$status ~ dat2$payments, family="binomial")
+summary(p)
+1 - (deviance(p)/p$null.deviance)
+```
+
+
+# TRANS 
+
+## avg_amtC - SIGNIFICATIVA !!! DIVISO 100
+
+```{r}
+summary(dat1$avg_amtC)
+summary(dat1$avg_amtC[dat1$status==0])
+summary(dat1$avg_amtC[dat1$status==1])
+```
+
+```{r}
+dat2$avg_amtC <- dat1$avg_amtC/100
+summary(dat2$avg_amtC)
+```
+
+```{r}
+t.test(avg_amtC ~ status, data = dat2,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(avg_amtC ~ status, data = dat2)
+```
+
+```{r}
+ggplot(dat2, aes(x=avg_amtC)) +
+  geom_boxplot(aes(colour=status, fill=status), alpha=0.3) +
+  xlab("Average amount Credit") +
+  labs(colour="Status", fill="Status") +
+  theme_light()
+```
+
+```{r}
+a1 <- glm(dat1$status ~ dat2$avg_amtC, family="binomial")
+summary(a1)
+1 - (deviance(a1)/a1$null.deviance)
+```
+
+
+## avg_amtW - SIGNIFICATIVA !!! DIVISO 100
+
+```{r}
+summary(dat1$avg_amtW)
+summary(dat1$avg_amtW[dat1$status==0])
+summary(dat1$avg_amtW[dat1$status==1])
+```
+
+```{r}
+dat2$avg_amtW <- dat1$avg_amtW/100
+summary(dat2$avg_amtW)
+```
+
+```{r}
+t.test(avg_amtW ~ status, data = dat2,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(avg_amtW ~ status, data = dat2)
+```
+
+```{r}
+ggplot(dat2, aes(x=avg_amtW)) +
+  geom_boxplot(aes(colour=status, fill=status), alpha=0.3) +
+  xlab("Average amount Withdrawal") +
+  labs(colour="Status", fill="Status") +
+  theme_light()
+```
+
+```{r}
+a2 <- glm(dat1$status ~ dat2$avg_amtW, family="binomial")
+summary(a2)
+1 - (deviance(a2)/a2$null.deviance)
+```
+
+
+## avg_balance - SIGNIFICATIVA !!! DIVISO 1000
+
+```{r}
+summary(dat1$avg_balance)
+summary(dat1$avg_balance[dat1$status==0])
+summary(dat1$avg_balance[dat1$status==1])
+```
+
+```{r}
+dat2$avg_balance <- dat1$avg_balance/1000
+summary(dat2$avg_balance)
+```
+
+```{r}
+t.test(avg_balance ~ status, data = dat2,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(avg_balance ~ status, data = dat2)
+```
+
+```{r}
+ggplot(dat2, aes(x=avg_balance)) +
+  geom_boxplot(aes(colour=status, fill=status), alpha=0.3) +
+  xlab("Average balance") +
+  labs(colour="Status", fill="Status") +
+  theme_light()
+```
+
+```{r}
+ab <- glm(dat1$status ~ dat2$avg_balance, family="binomial")
+summary(ab)
+1 - (deviance(ab)/ab$null.deviance)
+```
+
+
+
+# LE OPERATION
+
+# remittance - SIGNIFICATIVA
+
+```{r}
+summary(dat1$remittance)
+```
+
+```{r}
+t.test(remittance ~ status, data = dat1,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(remittance ~ status, data = dat1)
+```
+
+```{r}
+rem <- glm(dat1$status ~ dat1$remittance, family="binomial")
+summary(rem)
+1 - (deviance(rem)/rem$null.deviance)
+```
+
+```{r}
+ggplot(dat1, aes(x=remittance)) +
+  geom_boxplot(aes(colour=status, fill=status), alpha=0.3) +
+  xlab("Remittance") +
+  labs(colour="Status", fill="Status") +
+  theme_light()
+```
+
+
+# cash_c - SIGNIFICATIVA
+
+```{r}
+summary(dat1$cash_c)
+```
+
+```{r}
+t.test(cash_c ~ status, data = dat1,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(cash_c ~ status, data = dat1)
+```
+
+```{r}
+cc <- glm(dat1$status ~ dat1$cash_c, family="binomial")
+summary(cc)
+1 - (deviance(cc)/cc$null.deviance)
+```
+
+```{r}
+ggplot(dat1, aes(x=cash_c)) +
+  geom_boxplot(aes(colour=status, fill=status), alpha=0.3) +
+  xlab("Credit cash") +
+  labs(colour="Status", fill="Status") +
+  theme_light()
+```
+
+
+# cash_w - SIGNIFICATIVA
+
+```{r}
+summary(dat1$cash_w)
+```
+
+```{r}
+t.test(cash_w ~ status, data = dat1,
+       alternative = 'two.sided',     
+       conf.level = .95)
+var.test(cash_w ~ status, data = dat1)
+```
+
+```{r}
+cw <- glm(dat1$status ~ dat1$cash_w, family="binomial")
+summary(cw)
+1 - (deviance(cw)/cw$null.deviance)
+```
+
+```{r}
+ggplot(dat1, aes(x=cash_w)) +
+  geom_boxplot(aes(colour=status, fill=status), alpha=0.3) +
+  xlab("Withdrawal cash") +
+  labs(colour="Status", fill="Status") +
+  theme_light()
+```
+
+
+```{r}
+head(dat2)
+```
+
+
+```{r}
+#write.csv(dat2, "dat2.2.csv")
+```
+

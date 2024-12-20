@@ -1,0 +1,353 @@
+---
+title: "ModelloLogit"
+output: html_document
+date: "2023-07-06"
+---
+
+### !!! OPPURE FAI IL RUN DEL FILE "MULTICOLLINEARITA' TRAIN TEST" !!!
+
+```{r}
+library(MASS)
+library(ROCit)
+library(tidyverse)
+library(pROC)
+library(caret)
+library(lmtest)
+library(blorr)
+library(margins)
+library(car)
+library(arm)
+library(MKclass)
+library(statmod)
+library(erer)
+library(ggplot2)
+library(ggthemes)
+```
+
+
+
+# SELEZIONE DEL MODELLO 
+
+### TUTTE LE VARIABILI DEL DATASET 
+
+logit con tutte 
+
+```{r}
+logit <- glm(status ~ ., data=dat_train, family=binomial(link="logit"), x=TRUE) 
+```
+
+```{r}
+summary(logit)
+```
+
+```{r}
+AIC(logit)
+BIC(logit)
+```
+
+```{r}
+roc(Y_train, fitted(logit))
+roc(Y_test, predict(logit, newdata = X_test, type="response"))
+```
+
+
+solo con variabili statisticamente significative
+
+```{r}
+logit_rid <- glm(status ~ 1 + acc_m + avg_balance + avg_amtW + remittance + cash_c + cash_w, data=dat_train, family=binomial(link="logit"), x=TRUE) 
+```
+
+```{r}
+summary(logit_rid)
+```
+
+```{r}
+AIC(logit_rid)
+BIC(logit_rid)
+```
+
+```{r}
+roc(Y_train, fitted(logit_rid))
+roc(Y_test, predict(logit_rid, newdata = X_test, type="response"))
+```
+
+
+con stepwise
+
+```{r}
+logit_step <- glm(status ~ ., data=dat_train, family=binomial(link="logit"), x=TRUE) %>%
+  stepAIC(trace = FALSE)
+```
+
+```{r}
+summary(logit_step)
+```
+
+```{r}
+AIC(logit_step)
+BIC(logit_step)
+```
+
+```{r}
+roc(Y_train, fitted(logit_step))
+roc(Y_test, predict(logit_step, newdata = X_test, type="response"))
+```
+
+
+
+### SOLO CON VARIABILI I CUI TEST SONO RISULTATI SIGNIFICATIVI 
+
+con tutte le variabili 
+
+```{r}
+logit2 <- glm(status ~ ., data=dat_train2, family=binomial(link="logit"), x=TRUE)
+```
+
+```{r}
+summary(logit2)
+```
+
+```{r}
+AIC(logit2)
+BIC(logit2)
+```
+
+```{r}
+roc(Y_train2, fitted(logit2))
+roc(Y_test2, predict(logit2, newdata = X_test2, type="response"))
+```
+
+
+ridotto
+
+```{r}
+logit_rid2 <- glm(status ~ amount + avg_balance  + avg_amtW + remittance + cash_c + cash_w, data=dat_train2, family=binomial(link="logit"), x=TRUE)
+```
+
+```{r}
+summary(logit_rid2)
+```
+
+```{r}
+AIC(logit_rid2)
+BIC(logit_rid2)
+```
+
+```{r}
+roc(Y_train2, fitted(logit_rid2))
+roc(Y_test2, predict(logit_rid2, newdata = X_test2, type="response"))
+```
+
+
+stepwise 
+
+```{r, }
+logit_step2 <- glm(status ~ ., data=dat_train2, family=binomial(link="logit"), x=TRUE) %>%
+  stepAIC(trace = FALSE)
+```
+
+```{r}
+summary(logit_step2)
+```
+
+```{r}
+AIC(logit_step2)
+BIC(logit_step2)
+```
+
+```{r}
+roc(Y_train, fitted(logit_step2))
+roc(Y_test2, predict(logit_step2, newdata = X_test2, type="response"))
+```
+
+
+
+i migliori sono i due stepwise e posso confrontarli perchè sono annidati 
+
+```{r}
+lrtest(logit_step, logit_step2)
+```
+
+
+
+#### alla fine della fiera, il modello migliore è il logit_step 
+
+
+
+# STUDIO DEL MODELLO SELEZIONATO 
+
+```{r}
+summary(logit_step)
+```
+
+non tutte significative => provo ridotto 
+
+```{r}
+logit_step_rid <- glm(status ~ amount + ratio_entr + acc_m + 
+    avg_balance + avg_amtW + remittance + cash_c + cash_w, data=dat_train, family=binomial(link="logit"), x=TRUE)
+```
+
+```{r}
+summary(logit_step_rid)
+```
+
+confronto 
+
+```{r}
+lrtest(logit_step, logit_step_rid)
+```
+
+meglio modello ridotto 
+
+
+
+### ODDS RATIO 
+
+```{r}
+or <- DescTools::OddsRatio(logit_step_rid)
+```
+
+```{r}
+or
+```
+
+```{r}
+plot(or)
+```
+
+cerco di capire ragione di intervalli così ampi 
+
+```{r}
+blr_vif_tol(logit_step_rid)
+```
+
+```{r}
+cor(dat_train$avg_balance, dat_train$avg_amtW)
+```
+
+
+### EFFETTI MARGINALI 
+
+```{r}
+maBina(logit_step_rid, x.mean = FALSE)
+maBina(logit_step_rid, x.mean = TRUE)
+```
+
+media degli effetti marginali 
+```{r}
+effects <- margins(logit_step_rid)
+summary(effects)
+```
+
+```{r}
+ggplot(data=summary(effects)) +
+  geom_point(aes(factor, AME)) +
+  geom_errorbar(aes(x=factor, ymin=lower, ymax=upper),width = 0.1) +
+  geom_hline(yintercept = 0, color="grey") +
+  theme_minimal()
+```
+
+
+
+# PREVISIONI 
+
+```{r}
+test_logit <- predict(logit_step_rid, newdata = X_test, type="response")
+```
+
+```{r}
+roc <- rocit(score = test_logit,  
+              class = dat_test$status)
+roc
+plot(roc)
+```
+
+```{r}
+X_train
+```
+
+
+0.5, classico 
+
+```{r}
+classi_previste_logit1 <- ifelse(test_logit>=0.5, 1,0) 
+```
+
+```{r}
+table(ClassiVere = dat_test$status, 
+      ClassiPreviste = classi_previste_logit1) / nrow(dat_test) * 100
+```
+
+```{r}
+confusionMatrix(as.factor(classi_previste_logit1), as.factor(dat_test$status), positive="1")
+```
+
+
+0.11, percentuale di insolvenza 
+
+```{r}
+classi_previste_logit2 <- ifelse(test_logit>=0.11, 1,0) 
+```
+
+```{r}
+table(ClassiVere = dat_test$status, 
+      ClassiPreviste = classi_previste_logit2) / nrow(dat_test) * 100
+```
+
+```{r}
+confusionMatrix(as.factor(classi_previste_logit2), as.factor(dat_test$status), positive="1")
+```
+
+
+0.09882613, indice di Youden
+
+```{r}
+optCutoff(test_logit, Y_test, 1, perfMeasure="YJS")
+```
+
+```{r}
+classi_previste_logit3 <- ifelse(test_logit>= 0.09882613, 1,0) 
+```
+
+```{r}
+table(ClassiVere = dat_test$status, 
+      ClassiPreviste = classi_previste_logit3) / nrow(dat_test) * 100
+```
+
+```{r}
+confusionMatrix(as.factor(classi_previste_logit3), as.factor(dat_test$status), positive="1")
+```
+
+
+
+
+
+DIAGNOSI
+
+```{r, message=FALSE, warning=FALSE}
+marginalModelPlots(logit_step_rid)
+```
+
+
+```{r}
+DescTools::PseudoR2(logit_step_rid, c("McFadden", "Nagel", "CoxSnell"))
+```
+
+```{r}
+logit_step_rid$deviance
+```
+
+
+```{r}
+library(pROC)
+library(plotROC)
+plot(roc(dat_test$status,
+                   predict(logit_step_rid, newdata = X_test, type="response")),
+               col = "blue", 
+               print.thres=c(0.50,0.11,0.099)
+               )
+grid()
+```
+
+
+

@@ -1,0 +1,319 @@
+---
+title: "Modellocloglog"
+output: html_document
+date: "2023-07-06"
+---
+
+### !!! OPPURE FAI IL RUN DEL FILE "MULTICOLLINEARITA' TRAIN TEST" !!!
+
+```{r}
+library(MASS)
+library(ROCit)
+library(tidyverse)
+library(pROC)
+library(caret)
+library(lmtest)
+library(blorr)
+library(margins)
+library(ggplot2)
+library(ggthemes)
+library(car)
+library(arm)
+library(MKclass)
+```
+
+
+# SELEZIONE DEL MODELLO 
+
+### TUTTE LE VARIABILI DEL DATASET 
+
+cloglog con tutte 
+
+```{r}
+cloglog <- glm(status ~ ., data=dat_train, family=binomial(link="cloglog"), x=TRUE) 
+```
+
+```{r}
+summary(cloglog)
+```
+
+```{r}
+AIC(cloglog)
+BIC(cloglog)
+```
+
+```{r}
+roc(Y_train, fitted(cloglog))
+roc(Y_test, predict(cloglog, newdata = X_test, type="response"))
+```
+
+
+solo con variabili statisticamente significative
+
+```{r}
+cloglog_rid <- glm(status ~ 1 + duration + region + acc_m + avg_balance + avg_amtW + remittance + cash_c + cash_w, data=dat_train, family=binomial(link="cloglog"), x=TRUE) 
+```
+
+```{r}
+summary(cloglog_rid)
+```
+
+```{r}
+AIC(cloglog_rid)
+BIC(cloglog_rid)
+```
+
+```{r}
+roc(Y_train, fitted(cloglog_rid))
+roc(Y_test, predict(cloglog_rid, newdata = X_test, type="response"))
+```
+
+
+con stepwise
+
+```{r}
+cloglog_step <- glm(status ~ ., data=dat_train, family=binomial(link="cloglog"), x=TRUE) %>%
+  stepAIC(trace = FALSE)
+```
+
+```{r}
+summary(cloglog_step)
+```
+
+```{r}
+AIC(cloglog_step)
+BIC(cloglog_step)
+```
+
+```{r}
+roc(Y_train, fitted(cloglog_step))
+roc(Y_test, predict(cloglog_step, newdata = X_test, type="response"))
+```
+
+
+### SOLO CON VARIABILI I CUI TEST SONO RISULTATI SIGNIFICATIVI 
+
+con tutte le variabili 
+
+```{r}
+cloglog2 <- glm(status ~ ., data=dat_train2, family=binomial(link="cloglog"), x=TRUE)
+```
+
+```{r}
+summary(cloglog2)
+```
+
+```{r}
+AIC(cloglog2)
+BIC(cloglog2)
+```
+
+```{r}
+roc(Y_train2, fitted(cloglog2))
+roc(Y_test2, predict(cloglog2, newdata = X_test2, type="response"))
+```
+
+
+ridotto
+
+```{r}
+cloglog_rid2 <- glm(status ~ amount + acc_m + avg_balance  + avg_amtW + remittance + cash_c + cash_w, data=dat_train2, family=binomial(link="cloglog"), x=TRUE)
+```
+
+```{r}
+summary(cloglog_rid2)
+```
+
+```{r}
+AIC(cloglog_rid2)
+BIC(cloglog_rid2)
+```
+
+```{r}
+roc(Y_train2, fitted(cloglog_rid2))
+roc(Y_test2, predict(cloglog_rid2, newdata = X_test2, type="response"))
+```
+
+
+stepwise 
+
+```{r, }
+cloglog_step2 <- glm(status ~ ., data=dat_train2, family=binomial(link="cloglog"), x=TRUE) %>%
+  stepAIC(trace = FALSE)
+```
+
+```{r}
+summary(cloglog_step2)
+```
+
+```{r}
+AIC(cloglog_step2)
+BIC(cloglog_step2)
+```
+
+```{r}
+roc(Y_train, fitted(cloglog_step2))
+roc(Y_test2, predict(cloglog_step2, newdata = X_test2, type="response"))
+```
+
+
+
+solita questione che confronto i due stepwise come per il logit 
+
+```{r}
+lrtest(cloglog_step, cloglog_step2)
+```
+
+
+#### alla fine della fiera, il modello migliore è il cloglog_step 
+
+
+
+# STUDIO DEL MODELLO SELEZIONATO 
+
+```{r}
+summary(cloglog_step)
+```
+
+
+### ODDS RATIO 
+
+```{r}
+or <- DescTools::OddsRatio(cloglog_step)
+```
+
+
+```{r}
+or
+```
+
+
+```{r}
+plot(or)
+```
+
+
+```{r}
+blr_vif_tol(cloglog_step)
+```
+
+
+
+### EFFETTI MARGINALI 
+
+```{r}
+effects <- margins(cloglog_step)
+summary(effects)
+```
+
+
+```{r}
+ggplot(data=summary(effects)) +
+  geom_point(aes(factor, AME)) +
+  geom_errorbar(aes(x=factor, ymin=lower, ymax=upper),width = 0.1) +
+  geom_hline(yintercept = 0, color="grey") +
+  theme_minimal()
+```
+
+
+
+
+# PREVISIONI 
+
+PREVISIONI
+
+```{r}
+test_cloglog <- predict(cloglog_step, newdata = X_test, type="response")
+```
+
+```{r}
+roc <- rocit(score = test_cloglog,  
+              class = dat_test$status)
+roc
+plot(roc)
+```
+
+
+0.5, classico 
+
+```{r}
+classi_previste_cloglog1 <- ifelse(test_cloglog>=0.5, 1,0) 
+```
+
+```{r}
+table(ClassiVere = dat_test$status, 
+      ClassiPreviste = classi_previste_cloglog1) / nrow(dat_test) * 100
+```
+
+```{r}
+confusionMatrix(as.factor(classi_previste_cloglog1), as.factor(dat_test$status), positive="1")
+```
+
+
+0.11, percentuale di insolvenza 
+
+```{r}
+classi_previste_cloglog2 <- ifelse(test_cloglog>=0.11, 1,0) 
+```
+
+```{r}
+table(ClassiVere = dat_test$status, 
+      ClassiPreviste = classi_previste_cloglog2) / nrow(dat_test) * 100
+```
+
+```{r}
+confusionMatrix(as.factor(classi_previste_cloglog2), as.factor(dat_test$status), positive="1")
+```
+
+
+0.06722403, indice di Youden
+
+```{r}
+optCutoff(test_cloglog, Y_test, 1, perfMeasure="YJS")
+```
+
+```{r}
+classi_previste_cloglog3 <- ifelse(test_cloglog>=0.06722403, 1,0) 
+```
+
+```{r}
+table(ClassiVere = dat_test$status, 
+      ClassiPreviste = classi_previste_cloglog3) / nrow(dat_test) * 100
+```
+
+```{r}
+confusionMatrix(as.factor(classi_previste_cloglog3), as.factor(dat_test$status), positive="1")
+```
+
+
+
+
+DIAGNOSI
+
+```{r, message=FALSE, warning=FALSE}
+marginalModelPlots(cloglog_step)
+```
+
+```{r}
+DescTools::PseudoR2(cloglog_step, c("McFadden", "Nagel", "CoxSnell"))
+```
+
+
+```{r}
+cloglog_step$deviance
+```
+
+
+```{r}
+library(pROC)
+library(plotROC)
+plot(roc(dat_test$status,
+                   predict(cloglog_step, newdata = X_test, type="response")),
+               col = "blue", 
+               print.thres=c(0.50,0.11,0.067)
+               )
+grid()
+```
+
+
+

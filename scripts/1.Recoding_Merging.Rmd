@@ -1,0 +1,400 @@
+---
+title: "DATI"
+output:
+  html_document: default
+  pdf_document: default
+date: "2023-07-03"
+---
+
+
+```{r}
+library(tidyverse)
+```
+
+
+# IMPORT DATI 
+
+dal fisso 
+
+```{r}
+# account <- read.csv("C:\\Users\\salva\\OneDrive - Università di Salerno\\tesi\\DATI VERSIONE 2\\account.csv", sep=";")
+# card <- read.csv("C:\\Users\\salva\\OneDrive - Università di Salerno\\tesi\\DATI VERSIONE 2\\card.csv", sep=";")
+# client <- read.csv("C:\\Users\\salva\\OneDrive - Università di Salerno\\tesi\\DATI VERSIONE 2\\client.csv", sep=";")
+# disp <- read.csv("C:\\Users\\salva\\OneDrive - Università di Salerno\\tesi\\DATI VERSIONE 2\\disp.csv", sep=";")
+# district <- read.csv("C:\\Users\\salva\\OneDrive - Università di Salerno\\tesi\\DATI VERSIONE 2\\district.csv", sep=";")
+# loan <- read.csv("C:\\Users\\salva\\OneDrive - Università di Salerno\\tesi\\DATI VERSIONE 2\\loan.csv", sep=";")
+# order <- read.csv("C:\\Users\\salva\\OneDrive - Università di Salerno\\tesi\\DATI VERSIONE 2\\order.csv", sep=";")
+# trans <- read.csv("C:\\Users\\salva\\OneDrive - Università di Salerno\\tesi\\DATI VERSIONE 2\\trans.csv", sep=";")
+```
+
+
+dal Mac 
+
+```{r}
+account <- read.csv("/Users/mariapiatedesco/Library/CloudStorage/OneDrive-UniversitàdiSalerno/tesi/DATI VERSIONE 2/account.csv", sep=";")
+card <- read.csv("/Users/mariapiatedesco/Library/CloudStorage/OneDrive-UniversitàdiSalerno/tesi/DATI VERSIONE 2/card.csv", sep=";")
+client <- read.csv("/Users/mariapiatedesco/Library/CloudStorage/OneDrive-UniversitàdiSalerno/tesi/DATI VERSIONE 2/client.csv", sep=";")
+disp <- read.csv("/Users/mariapiatedesco/Library/CloudStorage/OneDrive-UniversitàdiSalerno/tesi/DATI VERSIONE 2/disp.csv", sep=";")
+district <- read.csv("/Users/mariapiatedesco/Library/CloudStorage/OneDrive-UniversitàdiSalerno/tesi/DATI VERSIONE 2/district.csv", sep=";")
+loan <- read.csv("/Users/mariapiatedesco/Library/CloudStorage/OneDrive-UniversitàdiSalerno/tesi/DATI VERSIONE 2/loan.csv", sep=";")
+order <- read.csv("/Users/mariapiatedesco/Library/CloudStorage/OneDrive-UniversitàdiSalerno/tesi/DATI VERSIONE 2/order.csv", sep=";")
+trans <- read.csv("/Users/mariapiatedesco/Library/CloudStorage/OneDrive-UniversitàdiSalerno/tesi/DATI VERSIONE 2/trans.csv", sep=";")
+```
+
+
+# RICODIFICA 
+
+## ACCOUNT 
+
+```{r}
+head(account)
+```
+
+```{r}
+account$account_id <- as.character(account$account_id)
+
+account$district_id <- as.character(account$district_id) 
+
+account$frequency <- as.factor(account$frequency)
+account$frequency <- fct_recode(account$frequency, Monthly="POPLATEK MESICNE", Weekly="POPLATEK TYDNE", AfterTrans="POPLATEK PO OBRATU")
+
+account$date <- paste("19", as.character(account$date), sep="")
+account$date <- as.Date(as.character(account$date), format="%Y%m%d")
+
+summary(account)
+```
+
+
+## CARD
+
+```{r}
+head(card)
+```
+
+```{r}
+card$card_id <- as.character(card$card_id)
+
+card$disp_id <- as.character(card$disp_id)
+
+colnames(card)[3] <- c("card_type") # mi serve per il merge così non si confonde
+card$card_type <- as.factor(card$card_type)
+
+card$issued <- paste("19", as.character(card$issued), sep="")
+card$issued <- as.Date(as.character(card$issued), format="%Y%m%d")
+
+summary(card)
+```
+
+
+## CLIENT
+
+```{r}
+head(client)
+```
+
+```{r}
+client$client_id <- as.character(client$client_id)
+
+client$district_id <- as.character(client$district_id)
+```
+
+problema con la data: mette +50 al mese delle donne 
+
+```{r}
+gender <- rep("M", times=nrow(client))
+
+for (i in 1:nrow(client)) {
+  data1 <- strsplit(as.character(client$birth_number)[i], split = "")
+  mese <- as.integer(paste0(data1[[1]][3], data1[[1]][4]))
+  if (mese > 50) {
+    gender[i] <- "F"
+    meseF <- mese-50
+    if (meseF < 10) {
+      meseF <- paste0("0", meseF)
+    }
+    client$birth_number[i] <- paste0(data1[[1]][1], data1[[1]][2], meseF, data1[[1]][5], data1[[1]][6])
+  }
+}
+
+client$gender <- as.factor(gender)
+client$birth_number <- paste("19", as.character(client$birth_number), sep="")
+client$birth_number <- as.Date(as.character(client$birth_number), format = "%Y%m%d")
+```
+
+```{r}
+summary(client)
+```
+
+
+## DISP 
+
+```{r}
+head(disp)
+```
+
+```{r}
+disp$disp_id <- as.character(disp$disp_id)
+
+disp$client_id <- as.character(disp$client_id)
+
+disp$account_id <- as.character(disp$account_id)
+
+disp$type <- as.factor(disp$type)
+
+summary(disp)
+```
+
+
+## DISTRICT 
+
+```{r}
+head(district)
+```
+
+```{r}
+colnames(district) <- c("district_id", "district_name", "region", "inhab", "mun499", "mun1999", "mun9999", "mun10000", "cities", "ratio_urban", "avg_salary", "unempl95", "unempl96", "ratio_entr", "crimes95", "crimes96")
+                        
+district$district_id <- as.character(district$district_id)  
+
+district$region <- as.factor(district$region)
+
+district$unempl95 <- as.double(district$unempl95)
+
+district$crimes95 <- as.double(district$crimes95)
+
+summary(district)
+```
+
+
+## LOAN 
+
+```{r}
+head(loan)
+```
+
+```{r}
+loan$loan_id <- as.character(loan$loan_id)
+
+loan$account_id <- as.character(loan$account_id)
+
+loan$date <- paste("19", as.character(loan$date), sep="")
+loan$date <- as.Date(as.character(loan$date), format="%Y%m%d")
+
+loan$duration <- as.factor(loan$duration)
+
+default <- rep(1, times=nrow(loan))
+for (i in 1: nrow(loan)) {
+  if (loan$status[i] == "A" | loan$status[i] == "C") {default[i] <- 0} }
+
+loan$status <- as.factor(default)
+
+summary(loan)
+```
+
+
+## ORDER 
+
+```{r}
+head(order)
+```
+
+```{r}
+order$order_id <- as.character(order$order_id)
+
+order$account_id <- as.character(order$account_id)
+
+order$account_id <- as.character(order$account_to)
+
+order$k_symbol <- as.factor(order$k_symbol)
+order$k_symbol <- fct_recode(order$k_symbol, leasing ="LEASING", insurance="POJISTNE", household="SIPO", loan="UVER", other=" ")
+
+summary(order)
+```
+
+
+## TRANS 
+
+```{r}
+head(trans)
+```
+
+```{r}
+trans$trans_id <- as.character(trans$trans_id)
+
+trans$account_id <- as.character(trans$account_id)
+
+trans$date <- paste("19", as.character(trans$date), sep="")
+trans$date <- as.Date(as.character(trans$date), format="%Y%m%d")
+
+trans$type <- as.factor(trans$type)
+trans$type <- fct_recode(trans$type, credit ="PRIJEM", withdrawal="VYBER", withdrawal="VYDAJ")
+
+trans$operation <- as.factor(trans$operation)
+trans$operation <- fct_recode(trans$operation, credit_card_w ="VYBER KARTOU", cash_w="VYBER", cash_c="VKLAD", collection="PREVOD Z UCTU", remittance="PREVOD NA UCET", other=" ", other="")
+
+trans$k_symbol <- as.factor(trans$k_symbol)
+trans$k_symbol <- fct_recode(trans$k_symbol, loan ="UVER", interest_credited="UROK", statement="SLUZBY", household="SIPO", sanction_negBalance="SANKC. UROK", insurance="POJISTNE", pension="DUCHOD", other=" ", other="")
+
+trans$bank <- as.factor(trans$bank)
+trans$bank <- fct_recode(trans$bank, other ="")
+
+trans$account <- as.character(trans$account)
+
+summary(trans)
+```
+
+
+## RICODIFICA CONCLUSA, VEDIAMO RISULTATI 
+
+```{r}
+head(account)
+head(card)
+head(client)
+head(disp)
+head(district)
+head(loan)
+head(order)
+head(trans)
+```
+
+
+
+# MERGE
+
+## tra le tabelle che non hanno bisogno di aggregazione
+
+```{r}
+res <- left_join(loan, account, by="account_id") %>% # parto indubbiamente da loan e passo ad account perchè ogni prestito è associato ad un account
+  left_join(district, by="district_id") %>% # poi passo a district di cui ho l'id in account 
+  left_join(disp, by="account_id") %>% # poi ci sta disp che collega account a client
+  left_join(client, by="client_id") %>% # ora posso passare a client
+  left_join(card, by="disp_id")  # e poi a card
+```
+
+```{r}
+head(res)
+```
+
+```{r}
+res2 <- res %>%
+  filter(type=="OWNER") %>% # solo gli clienti che sono OWNER dell'account possono richiedere prestiti 
+  mutate(acc_m=as.integer((date.x-date.y)/30)) %>% # da quanti mesi ha account
+  
+  mutate(age=as.integer((date.x-birth_number)/365)) %>% # a quanti anni ha chiesto il prestito
+  
+  select(-c(date.x, district_id.x, date.y, district_name, disp_id, client_id, birth_number, type, district_id.y, card_id, issued)) # elimino id + date trasformate
+```
+
+```{r}
+head(res2)
+```
+
+
+##  tabelle che hanno bisogno di aggregazione
+
+### TRANS
+
+```{r}
+head(trans)
+```
+
+```{r}
+summary(trans)
+```
+
+```{r}
+# BALANCE
+
+bal <- trans %>%
+  group_by(account_id) %>%
+  summarise("avg_balance"=mean(balance)) 
+head(bal)
+```
+
+```{r}
+# AMOUNT E TYPE 
+
+amt_C <- trans %>%
+  group_by(account_id) %>%
+  filter(type=="credit") %>%
+  summarise("avg_amtC"=round(mean(amount),2))
+head(amt_C)
+
+amt_W <- trans %>%
+  group_by(account_id) %>%
+  filter(type=="withdrawal") %>%
+  summarise("avg_amtW"=round(mean(amount),2))
+head(amt_W)
+```
+
+```{r}
+# COUNT OPERATION
+
+n_operation <- trans %>%
+  group_by(account_id, operation) %>%
+  count(operation) %>%
+  pivot_wider(names_from=operation, values_from = n)
+head(n_operation)
+```
+
+
+### ORDER
+
+....ma vedi sta cosa
+
+```{r}
+left_join(loan, order, by="account_id")
+```
+
+nella parte di order sono tutti NA => nada !
+
+
+
+## aggiungo queste nuove informazioni 
+
+```{r}
+res3 <- res2 %>%
+  left_join(bal, by="account_id") %>%
+  left_join(amt_C, by="account_id") %>% 
+  left_join(amt_W, by="account_id") %>% 
+  left_join(n_operation, by="account_id") %>%
+  select(-c(loan_id, account_id)) # a questo punto non servono più
+```
+
+```{r}
+head(res3)
+```
+
+```{r}
+summary(res3)
+```
+
+
+# CONSIDERAZIONI 
+
+```{r}
+sum(ifelse(is.na(res3$card_type)==TRUE, 1, 0))/nrow(res3)
+sum(ifelse(is.na(res3$collection)==TRUE, 1, 0))/nrow(res3)
+sum(ifelse(is.na(res3$credit_card_w)==TRUE, 1, 0))/nrow(res3)
+```
+
+dato il gran numero di NA presenti in card_type, collection e credit_card_w, le rimuovo
+
+
+```{r}
+res4 <- subset(res3, select=-c(card_type, collection, credit_card_w, other))
+```
+
+```{r}
+res5 <- na.omit(res4)
+dim(res5)
+```
+
+```{r}
+#write.csv(res5, "res5.2.csv")
+```
+
+```{r}
+head(res5)
+```
+
