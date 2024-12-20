@@ -1,8 +1,8 @@
 ---
 title: "Dati"
 output:
-  pdf_document: Status
-  html_document: Status
+  pdf_document: default
+  html_document: default
 date: "2023-07-04"
 ---
 
