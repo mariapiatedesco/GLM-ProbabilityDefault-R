@@ -25,10 +25,10 @@ This is the starting point for this work, which aims to investigate the use of b
 ---
 
 ## 🏗️ Repository Structure
-- `Index_Intro/`: Contains the Table of Contents and the Introduction of my thesis.
-- `Chapter3/`: The chapter related to the application of the models on real-world data.
+- `Index_Intro`: Contains the Table of Contents and the Introduction of my thesis.
+- `Chapter3`: The chapter related to the application of the models on real-world data.
 - `BERKA/`: Includes datasets used for model training and evaluation. 
-- `scripts/`: Scripts for data preprocessing, model building, validation, and comparison. Refer to `scripts/README_scripts` for more details.
+- `scripts/`: Scripts (R Markdown) for data preprocessing, model building, validation, and comparison. Refer to `scripts/README_scripts` for more details.
 
 ---
 
